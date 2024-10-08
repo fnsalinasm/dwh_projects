@@ -256,7 +256,78 @@ COMMENT ON COLUMN stg.hdi_tables_dates_replacement.date_value IS 'Valor de la fe
 
 
 -- ================================================
--- 7. Script para la tabla hdi_tables_migration
+-- 7. . Script para la tabla hdi_tables_dates_replacement
+-- ================================================
+
+DROP TABLE IF EXISTS hdi.stg.hdi_tables_dags CASCADE;
+DROP TRIGGER IF EXISTS set_timestamp_dags ON hdi.stg.hdi_tables_dags;
+
+CREATE TABLE hdi.stg.hdi_tables_dags (
+    dag_id VARCHAR(50) PRIMARY KEY,  -- Identificador único del DAG.
+    created_at TIMESTAMP DEFAULT NOW() NOT NULL,  -- Fecha y hora de creación del registro.
+    updated_at TIMESTAMP DEFAULT NOW() NOT NULL,  -- Fecha y hora de la última actualización.
+    dag_owner VARCHAR(20) NOT NULL,  -- Nombre del propietario del DAG (referencia a hdi_tables_users).
+    depends_on_past BOOLEAN NOT NULL,  -- Indica si depende del éxito de ejecuciones pasadas.
+    email VARCHAR(100) NOT NULL,  -- Correo electrónico para notificaciones del DAG.
+    email_on_failure BOOLEAN NOT NULL,  -- Determina si se envía correo en caso de fallos.
+    email_on_retry BOOLEAN NOT NULL,  -- Determina si se envía correo en reintentos.
+    retries INTEGER NOT NULL,  -- Número de reintentos permitidos.
+    retry_delay_seconds INTEGER NOT NULL,  -- Tiempo de espera entre reintentos en segundos.
+    dagrun_timeout_minutes INTEGER NOT NULL,  -- Tiempo máximo para la ejecución del DAG.
+    description VARCHAR(250) NOT NULL,  -- Descripción del DAG.
+    schedule VARCHAR(50) NOT NULL,  -- Expresión cron o intervalo de tiempo para la ejecución del DAG.
+    max_active_tasks INTEGER NOT NULL,  -- Número máximo de tareas activas concurrentemente.
+    max_active_runs INTEGER NOT NULL,  -- Número máximo de ejecuciones activas concurrentemente.
+    start_date DATE NOT NULL,  -- Fecha y hora de inicio del DAG.
+    catchup BOOLEAN NOT NULL,  -- Determina si debe ejecutar tareas no ejecutadas previamente.
+    tags TEXT,  -- Lista de etiquetas asociadas al DAG.
+    on_failure_callback BOOLEAN NOT NULL,  -- Indica si hay una función de callback en caso de fallo.
+    is_active BOOLEAN NOT NULL,  -- Determina si el DAG está activo.
+    is_paused_upon_creation BOOLEAN NOT NULL  -- Indica si el DAG debe estar en pausa al crearse.
+);
+
+CREATE TRIGGER set_timestamp_dags
+BEFORE UPDATE ON hdi.stg.hdi_tables_dags
+FOR EACH ROW
+EXECUTE FUNCTION hdi.stg.update_timestamp();
+
+CREATE INDEX idx_dag_owner ON hdi.stg.hdi_tables_dags (dag_owner);
+CREATE INDEX idx_dag_start_date ON hdi.stg.hdi_tables_dags (start_date);
+CREATE INDEX idx_dag_is_active ON hdi.stg.hdi_tables_dags (is_active);
+
+COMMENT ON TABLE hdi.stg.hdi_tables_dags IS 'Tabla que almacena la configuración de los DAGs en Airflow, incluyendo los parámetros de ejecución, notificaciones y tiempos de espera.';
+COMMENT ON COLUMN hdi.stg.hdi_tables_dags.dag_id IS 'Identificador único del DAG, usado para referenciar y ejecutar el DAG.';
+COMMENT ON COLUMN hdi.stg.hdi_tables_dags.dag_owner IS 'Nombre del propietario del DAG, generalmente un usuario o equipo responsable del DAG (referencia a hdi_tables_users).';
+COMMENT ON COLUMN hdi.stg.hdi_tables_dags.depends_on_past IS 'Booleano que indica si la ejecución de las tareas depende del éxito de las ejecuciones anteriores.';
+COMMENT ON COLUMN hdi.stg.hdi_tables_dags.email IS 'Dirección de correo electrónico (o lista de correos) a la que se enviarán las notificaciones relacionadas con el DAG.';
+COMMENT ON COLUMN hdi.stg.hdi_tables_dags.email_on_failure IS 'Booleano que determina si se debe enviar un correo electrónico cuando una tarea del DAG falla.';
+COMMENT ON COLUMN hdi.stg.hdi_tables_dags.email_on_retry IS 'Booleano que determina si se debe enviar un correo electrónico cuando se reintenta una tarea que ha fallado.';
+COMMENT ON COLUMN hdi.stg.hdi_tables_dags.retries IS 'Número de reintentos que se realizarán cuando una tarea falla antes de marcarla como fallida definitivamente.';
+COMMENT ON COLUMN hdi.stg.hdi_tables_dags.retry_delay_seconds IS 'Tiempo de espera (en segundos) entre reintentos en caso de fallo de una tarea.';
+COMMENT ON COLUMN hdi.stg.hdi_tables_dags.dagrun_timeout_minutes IS 'Tiempo máximo (en minutos) permitido para la ejecución completa del DAG antes de marcarlo como fallido.';
+COMMENT ON COLUMN hdi.stg.hdi_tables_dags.description IS 'Descripción breve del propósito o funcionalidad del DAG.';
+COMMENT ON COLUMN hdi.stg.hdi_tables_dags.schedule IS 'Expresión cron o intervalo de tiempo que define cuándo debe ejecutarse el DAG.';
+COMMENT ON COLUMN hdi.stg.hdi_tables_dags.max_active_tasks IS 'Número máximo de tareas que pueden ejecutarse de manera concurrente dentro del DAG.';
+COMMENT ON COLUMN hdi.stg.hdi_tables_dags.max_active_runs IS 'Número máximo de ejecuciones activas (corriendo) del DAG en un momento dado.';
+COMMENT ON COLUMN hdi.stg.hdi_tables_dags.start_date IS 'Fecha y hora a partir de la cual el DAG comenzará a ejecutarse.';
+COMMENT ON COLUMN hdi.stg.hdi_tables_dags.catchup IS 'Booleano que indica si el DAG debe ejecutar los períodos previos (backfill) que no fueron ejecutados cuando el DAG no estaba activo.';
+COMMENT ON COLUMN hdi.stg.hdi_tables_dags.tags IS 'Lista de etiquetas asociadas con el DAG para facilitar la organización o búsqueda en la interfaz de usuario.';
+COMMENT ON COLUMN hdi.stg.hdi_tables_dags.on_failure_callback IS 'Función o callback que se ejecuta cuando una tarea del DAG falla.';
+COMMENT ON COLUMN hdi.stg.hdi_tables_dags.is_active IS 'Booleano que indica si el DAG está activo y debe ser programado para ejecutarse.';
+COMMENT ON COLUMN hdi.stg.hdi_tables_dags.is_paused_upon_creation IS 'Booleano que determina si el DAG debe estar en pausa cuando es creado.';
+COMMENT ON COLUMN hdi.stg.hdi_tables_dags.created_at IS 'Fecha y hora de creación del registro.';
+COMMENT ON COLUMN hdi.stg.hdi_tables_dags.updated_at IS 'Fecha y hora de la última actualización del registro.';
+
+INSERT INTO hdi.stg.hdi_tables_dags(dag_id, dag_owner, depends_on_past, email, email_on_failure, email_on_retry, retries, retry_delay_seconds, dagrun_timeout_minutes, description, schedule, max_active_tasks, max_active_runs, start_date, catchup, tags, on_failure_callback, is_active, is_paused_upon_creation)
+VALUES
+	('migration_daily', 'fabio.salinas', 'False', 'fabio.salinas@hdi.com.co', 'False', 'False', '3', '30', '60', 'Migración de tablas diarias de HDI a HDI Seguros', '0 6 * * *', '1', '1', '2024-10-07', 'False', '{"migración", "hdi", "hdiseguros"}', 'True', 'True', 'False'),
+	('migration_weekly', 'fabio.salinas', 'False', 'fabio.salinas@hdi.com.co', 'False', 'False', '3', '30', '60', 'Migración de tablas diarias de HDI a HDI Seguros', '0 5 * * 1', '1', '1', '2024-10-07', 'False', '{"migración", "hdi", "hdiseguros"}', 'True', 'True', 'False'),
+	('migration_monthly', 'fabio.salinas', 'False', 'fabio.salinas@hdi.com.co', 'False', 'False', '3', '30', '60', 'Migración de tablas diarias de HDI a HDI Seguros', '0 4 1 */1 *', '1', '1', '2024-10-07', 'False', '{"migración", "hdi", "hdiseguros"}', 'True', 'True', 'False')
+;
+
+
+-- ================================================
+-- 8. Script para la tabla hdi_tables_migration
 -- ================================================
 
 -- Eliminar la tabla y el trigger si ya existen
@@ -284,14 +355,17 @@ CREATE TABLE hdi.stg.hdi_tables_migration (
     replace_for_end_date VARCHAR(50) NOT NULL,  -- Fecha final para reemplazo de datos en el sistema destino.
     hdi_path VARCHAR(250) NOT NULL,  -- Ruta del sistema HDI que almacena los datos migrados.
     hdiseguros_path VARCHAR(250) NOT NULL,  -- Ruta del sistema destino (HDI Seguros) donde se almacenan los datos migrados.
-    target_table VARCHAR(250) NOT NULL,
+    target_table VARCHAR(250) NOT NULL, -- Nombre de la tabla en la que se cargaran los datos extraidos en el sistema de HDI Seguros
+    dag_id VARCHAR(50) NOT NULL, -- Cron que define la frecuencia de ejecución del proceso
 
     -- Foreign keys para garantizar la integridad referencial.
     CONSTRAINT fk_system FOREIGN KEY (system) REFERENCES hdi.stg.hdi_tables_systems(system),
     CONSTRAINT fk_username FOREIGN KEY (username) REFERENCES hdi.stg.hdi_tables_users(username),
     CONSTRAINT fk_secret FOREIGN KEY (secret) REFERENCES hdi.stg.hdi_tables_secrets(secret),
     CONSTRAINT fk_replace_for_start_date FOREIGN KEY (replace_for_start_date) REFERENCES hdi.stg.hdi_tables_dates_replacement(date_name),
-    CONSTRAINT fk_replace_for_end_date FOREIGN KEY (replace_for_end_date) REFERENCES hdi.stg.hdi_tables_dates_replacement(date_name)
+    CONSTRAINT fk_replace_for_end_date FOREIGN KEY (replace_for_end_date) REFERENCES hdi.stg.hdi_tables_dates_replacement(date_name),
+    CONSTRAINT fk_dag_id FOREIGN KEY (dag_id) REFERENCES hdi.stg.hdi_tables_dags(dag_id),
+    CONSTRAINT unique_target_table UNIQUE (target_table) -- Restricción de unicidad
 );
 
 -- Trigger para actualizar el campo updated_at en cada modificación de una fila.
@@ -308,4 +382,14 @@ CREATE INDEX idx_migration_system ON hdi.stg.hdi_tables_migration (system);
 COMMENT ON TABLE hdi.stg.hdi_tables_migration IS 'Tabla que documenta y gestiona los procesos de migración de datos entre los sistemas de origen y destino. Proporciona una auditoría detallada de cada proceso de migración.';
 COMMENT ON COLUMN hdi.stg.hdi_tables_migration.extraction_type IS 'Tipo de extracción de datos: SP (Stored Procedure), QY (Query), ST (Streaming), TA (Tabla), DW (Data Warehouse).';
 COMMENT ON COLUMN hdi.stg.hdi_tables_migration.extraction_mode IS 'Modo de extracción de datos: delta (cambios incrementales) o replace (reemplazo completo).';
+
+INSERT INTO hdi.stg.hdi_tables_migration(system, db, schema, table_name, extraction_type, username, secret, extraction_mode, replace_for_start_date, replace_for_end_date, hdi_path, hdiseguros_path, target_table, dag_id)
+values
+	('sise', 'PLANEACION_RPT', 'dbo', 'PRODUCCION_COMPLETA', 'QY', 'fabio.salinas', 'PLANEACION_RPT_PROD',
+	 'delta', '@1ST_DAY_OF_LAST_MONTH', '@LAST_DAY_OF_LAST_MONTH', 'g0_attrition/planeacion_rpt/produccion_completa/',
+	 'Pendiente', 'sise_planeacion_rpt_produccion_completa', 'migration_monthly'),
+	('sise', 'PLANEACION_RPT', 'dbo', 'PRODUCCION_COMPLETA_MTD', 'QY', 'fabio.salinas', 'PLANEACION_RPT_PROD',
+	 'replace', '@1ST_DAY_OF_ACTUAL_MONTH', '@TODAY_DATE', 'g0_attrition/planeacion_rpt/produccion_completa_mtd/',
+	 'Pendiente', 'sise_planeacion_rpt_produccion_completa_mtd', 'migration_daily')
+;
 
