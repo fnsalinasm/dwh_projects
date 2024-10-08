@@ -394,3 +394,11 @@ values
 	 'Pendiente', 'sise_planeacion_rpt_produccion_completa_mtd', 'migration_daily')
 ;
 
+
+grant all on hdi.stg.hdi_tables_dags to bi_analyst;
+grant all on hdi.stg.hdi_tables_dates_replacement to bi_analyst;
+grant all on hdi.stg.hdi_tables_migration to bi_analyst;
+grant all on hdi.stg.hdi_tables_secrets to bi_analyst;
+grant all on hdi.stg.hdi_tables_systems to bi_analyst;
+grant all on hdi.stg.hdi_tables_users to bi_analyst;
+
