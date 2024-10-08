@@ -37,7 +37,8 @@ CREATE TABLE hdi.stg.hdi_tables_secrets (
     id SERIAL PRIMARY KEY,  -- Identificador único para cada secreto, generado automáticamente.
     created_at TIMESTAMP DEFAULT NOW() NOT NULL,  -- Fecha y hora de creación del registro, valor por defecto NOW().
     updated_at TIMESTAMP DEFAULT NOW() NOT NULL,  -- Fecha y hora de la última actualización del registro.
-    secret VARCHAR(50) NOT NULL UNIQUE  -- Nombre del secreto o clave utilizada en el proceso de extracción. Debe ser único.
+    secret VARCHAR(50) NOT NULL UNIQUE, -- Nombre del secreto o clave utilizada en el proceso de extracción. Debe ser único.
+    db_type VARCHAR(50) NOT NULL CHECK (db_type IN ('PostgreSQL', 'SQL Server', 'Oracle', 'MySQL', 'Otra')) -- Tipo de base de datos Eg. PostgreSQL, SQL Server, Oracle
 );
 
 -- Trigger para actualizar el campo updated_at en cada modificación de una fila.
@@ -49,48 +50,48 @@ EXECUTE FUNCTION hdi.stg.update_timestamp();
 -- Índices recomendados para búsquedas frecuentes basadas en la fecha de creación.
 CREATE INDEX idx_secret_created_at ON hdi.stg.hdi_tables_secrets (created_at);
 
-INSERT INTO hdi.stg.hdi_tables_secrets (secret)
+INSERT INTO hdi.stg.hdi_tables_secrets (secret, db_type)
 VALUES
-	 ('SVR-PRD-SLQDWH'),
-	 ('SVR-PRD-SQLBI'),
-	 ('BOG-FABIOS'),
-	 ('classicmodels'),
-	 ('appdb'),
-	 ('dwh_db_dev'),
-	 ('cdif_config'),
-	 ('FTP-SQL'),
-	 ('FTP-CSV'),
-	 ('AIRFLOW-CDIF-APPLOG'),
-	 ('BUC-IFRS17-STAGECOMERCIAL'),
-	 ('VRT-TST-DB1'),
-	 ('KARIN'),
-	 ('KARIN_AUTH'),
-	 ('BPM_INSPECCIONES_PROD'),
-	 ('BPM_MASIVOS_PROD'),
-	 ('BPM_SINIESTROSGENERALES_PROD'),
-	 ('BPM_SINIESTROSVIDA_PROD'),
-	 ('BPM_BIZUITDASHBOARD_PROD'),
-	 ('BPM_BIZUITPERSISTENCESTORE_PROD'),
-	 ('PLANEACION_RPT'),
-	 ('GENERALES_PROD'),
-	 ('GENERALES_TEST'),
-	 ('VIDA_PROD'),
-	 ('VIDA_TEST'),
-	 ('APPGENERALI_PROD'),
-	 ('APPGENERALI_TEST'),
-	 ('PRESUPUESTO_PROD'),
-	 ('DATAMART_FINAN_PROD'),
-	 ('PLANEACION_RPT_PROD'),
-	 ('CLICKHDI_PROD'),
-	 ('CLICK_HDI_CONSULTAS_HDI'),
-	 ('CLICK_HDI_CONSULTASGU_HDI'),
-	 ('CLICK_HDI_PROD_REPORTES_HDI'),
-	 ('GESTOR_DOCUMENTAL_WEB'),
-	 ('sharefolder'),
-	 ('Ser-Sqlbi'),
-	 ('ser-qlikview'),
-	 ('Reportes.Bi'),
-	 ('cdif_hdi')
+	 ('SVR-PRD-SLQDWH', 'PostgreSQL'),
+	 ('SVR-PRD-SQLBI', 'SQL Server'),
+	 ('BOG-FABIOS', 'Otra'),
+	 ('classicmodels', 'MySQL'),
+	 ('appdb', 'PostgreSQL'),
+	 ('dwh_db_dev', 'PostgreSQL'),
+	 ('cdif_config', 'PostgreSQL'),
+	 ('FTP-SQL', 'Otra'),
+	 ('FTP-CSV', 'Otra'),
+	 ('AIRFLOW-CDIF-APPLOG', 'PostgreSQL'),
+	 ('BUC-IFRS17-STAGECOMERCIAL', 'SQL Server'),
+	 ('VRT-TST-DB1', 'SQL Server'),
+	 ('KARIN', 'SQL Server'),
+	 ('KARIN_AUTH', 'SQL Server'),
+	 ('BPM_INSPECCIONES_PROD', 'SQL Server'),
+	 ('BPM_MASIVOS_PROD', 'SQL Server'),
+	 ('BPM_SINIESTROSGENERALES_PROD', 'SQL Server'),
+	 ('BPM_SINIESTROSVIDA_PROD', 'SQL Server'),
+	 ('BPM_BIZUITDASHBOARD_PROD', 'SQL Server'),
+	 ('BPM_BIZUITPERSISTENCESTORE_PROD', 'SQL Server'),
+	 ('PLANEACION_RPT', 'SQL Server'),
+	 ('GENERALES_PROD', 'SQL Server'),
+	 ('GENERALES_TEST', 'SQL Server'),
+	 ('VIDA_PROD', 'SQL Server'),
+	 ('VIDA_TEST', 'SQL Server'),
+	 ('APPGENERALI_PROD', 'SQL Server'),
+	 ('APPGENERALI_TEST', 'SQL Server'),
+	 ('PRESUPUESTO_PROD', 'SQL Server'),
+	 ('DATAMART_FINAN_PROD', 'SQL Server'),
+	 ('PLANEACION_RPT_PROD', 'SQL Server'),
+	 ('CLICKHDI_PROD', 'SQL Server'),
+	 ('CLICK_HDI_CONSULTAS_HDI', 'Oracle'),
+	 ('CLICK_HDI_CONSULTASGU_HDI', 'Oracle'),
+	 ('CLICK_HDI_PROD_REPORTES_HDI', 'Oracle'),
+	 ('GESTOR_DOCUMENTAL_WEB', 'Otra'),
+	 ('sharefolder', 'Otra'),
+	 ('Ser-Sqlbi', 'Otra'),
+	 ('ser-qlikview', 'Otra'),
+	 ('Reportes.Bi', 'Otra'),
+	 ('cdif_hdi', 'PostgreSQL')
 ;
 
 -- Comentarios explicativos
