@@ -3,7 +3,7 @@
 Autor: Fabio Salinas
 Email: fabio.salinas@hdi.com.co
 Fecha de creación de script: 06 Octubre de 2024 (2024-10-06)
-Descripción del script: Query de extracción de datos acumulados por mes para la generación de un archivos csv
+Descripción del script: Query de ejecución de extracción de datos
 Variables de remplazo:
  - start_date:	{start_date}
  - end_date:	{end_date}
@@ -110,5 +110,7 @@ SELECT
 	, p.PRIMA_CEDIDA_REAS
 	, p.PRIMA_RETENIDA_REAS
 FROM PLANEACION_RPT.dbo.PRODUCCION_COMPLETA p WITH(NOLOCK)
-WHERE DATEFROMPARTS(p.AAAA_PROCESO, p.MM_PROCESO, 1) BETWEEN CONVERT(DATE, '{start_date}', 23) AND CONVERT(DATE, '{end_date}', 23)
+--WHERE DATEFROMPARTS(p.AAAA_PROCESO, p.MM_PROCESO, 1) BETWEEN CONVERT(DATE, '{start_date}', 23) AND CONVERT(DATE, '{end_date}', 23)
+WHERE p.AAAA_PROCESO = CAST(SUBSTRING('{start_date}', 1, AS INTEGER)
+	AND p.MM_PROCESO = CAST(SUBSTRING('{end_date}', 6, 2) AS INTEGER)
 ;
