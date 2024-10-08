@@ -402,3 +402,4 @@ grant all on hdi.stg.hdi_tables_secrets to bi_analyst;
 grant all on hdi.stg.hdi_tables_systems to bi_analyst;
 grant all on hdi.stg.hdi_tables_users to bi_analyst;
 
+grant all on hdi.stg.hdi_tables_migration_id_seq to bi_analyst;
