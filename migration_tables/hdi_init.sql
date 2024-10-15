@@ -395,11 +395,75 @@ values
 ;
 
 
+-- ================================================
+-- 9. Script para la tabla hdi_tables_history_execution
+-- ================================================
+
+-- Eliminar la tabla y el trigger si ya existen
+DROP TABLE IF EXISTS hdi.stg.hdi_tables_history_execution CASCADE;
+DROP TRIGGER IF EXISTS set_timestamp_migration_history ON hdi.stg.hdi_tables_history_execution;
+
+-- Tabla que gestiona y registra los procesos de migración de datos entre los sistemas
+-- de origen y destino. Cada registro documenta los detalles de la migración, incluyendo
+-- el sistema, el tipo de extracción, el usuario responsable, y los secretos necesarios
+-- para la configuración. Se utiliza para auditar y realizar un seguimiento de las
+-- migraciones de datos.
+CREATE TABLE hdi.stg.hdi_tables_history_execution (
+    id SERIAL NOT NULL,  -- Identificador único para cada proceso de migración, generado automáticamente.
+    created_at TIMESTAMP DEFAULT NOW() NOT NULL,  -- Fecha y hora de creación del registro, valor por defecto NOW().
+    updated_at TIMESTAMP DEFAULT NOW() NOT NULL,  -- Fecha y hora de la última actualización del registro.
+    target_table VARCHAR(250) NOT NULL, -- Nombre de la tabla en la que se cargaran los datos extraidos en el sistema de HDI Seguros
+    start_date DATE NOT NULL,  -- Fecha inicial para reemplazo de datos en el sistema destino.
+    end_date DATE NOT NULL,  -- Fecha final para reemplazo de datos en el sistema destino.
+    processed BOOLEAN DEFAULT FALSE, -- Para indicar si la fila ha sido procesada
+    processed_timestamp TIMESTAMP, -- Para registrar la fecha y hora de procesamiento
+    dag_run_id VARCHAR,  -- Para identificar el DAG que realizó el procesamiento
+    attempts INTEGER DEFAULT 0,  -- Para rastrear el número de intentos de procesamiento
+    last_attempt_timestamp TIMESTAMP,  -- Para saber cuándo se realizó el último intento
+    error_message TEXT,  -- Para almacenar mensajes de error si el proceso falla
+    processing_duration INTERVAL,  -- Para registrar cuánto tiempo tomó procesar
+    status VARCHAR,  -- Para registrar el estado final (SUCCESS, FAILED, etc.)
+    priority INTEGER DEFAULT 0,  -- Para establecer la prioridad de procesamiento
+    last_processed_by VARCHAR, -- Para saber qué sistema o DAG intentó procesar la fila
+    username VARCHAR(50) NOT NULL,  -- Usuario responsable de configurar el proceso de migración (referencia a hdi_tables_users).
+    CONSTRAINT fk_target_table FOREIGN KEY (target_table) REFERENCES hdi.stg.hdi_tables_migration(target_table), -- Para garantizar la integridad referencial
+    CONSTRAINT fk_username2 FOREIGN KEY (username) REFERENCES hdi.stg.hdi_tables_users(username), -- Para garantizar la integridad referencial
+    PRIMARY KEY (target_table, start_date, end_date) -- Para garantizar la unicidad de las filas
+);
+
+-- Trigger para actualizar el campo updated_at en cada modificación de una fila.
+CREATE TRIGGER set_timestamp_migration_history
+BEFORE UPDATE ON hdi.stg.hdi_tables_history_execution
+FOR EACH ROW
+EXECUTE FUNCTION hdi.stg.update_timestamp();
+
+-- Índices recomendados para búsquedas frecuentes basadas en la fecha de creación.
+CREATE INDEX idx_migration_history_created_at ON hdi.stg.hdi_tables_history_execution (created_at);
+
+-- Comentarios explicativos
+COMMENT ON TABLE hdi.stg.hdi_tables_history_execution IS 'Tabla que documenta y gestiona los procesos de migración de datos entre los sistemas de origen y destino. Proporciona una auditoría detallada de cada proceso de migración.';
+
+/*
+INSERT INTO hdi.stg.hdi_tables_history_execution(target_table, start_date, end_date, username)
+values
+    ('sise_produccion_produccion_jt', '2024-09-01', '2024-09-05', 'fabio.salinas')
+;
+*/
+
+
 grant all on hdi.stg.hdi_tables_dags to bi_analyst;
 grant all on hdi.stg.hdi_tables_dates_replacement to bi_analyst;
 grant all on hdi.stg.hdi_tables_migration to bi_analyst;
 grant all on hdi.stg.hdi_tables_secrets to bi_analyst;
 grant all on hdi.stg.hdi_tables_systems to bi_analyst;
 grant all on hdi.stg.hdi_tables_users to bi_analyst;
+grant all on hdi.stg.hdi_tables_history_execution to bi_analyst;
 
 grant all on hdi.stg.hdi_tables_migration_id_seq to bi_analyst;
+grant all on hdi.stg.hdi_tables_history_execution_id_seq to bi_analyst;
+grant all on hdi.stg.hdi_tables_dags_id_seq to bi_analyst;
+grant all on hdi.stg.hdi_tables_dates_replacement_id_seq to bi_analyst;
+grant all on hdi.stg.hdi_tables_secrets_id_seq to bi_analyst;
+grant all on hdi.stg.hdi_tables_systems_id_seq to bi_analyst;
+grant all on hdi.stg.hdi_tables_users_id_seq to bi_analyst;
+
